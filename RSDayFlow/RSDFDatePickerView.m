@@ -254,7 +254,7 @@ static NSString * const RSDFDatePickerViewDayCellIdentifier = @"RSDFDatePickerVi
 
 - (RSDFDatePickerMode)datePickerMode
 {
-    return RSDFDatePickerModeWeek;
+    return RSDFDatePickerModeSingleDay;
 }
 
 - (Class)monthHeaderClass
