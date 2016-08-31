@@ -27,6 +27,13 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+typedef NS_ENUM (NSUInteger, RSDFDatePickerMode) {
+    /// Single day date picker mode
+    RSDFDatePickerModeSingleDay,
+    /// Week selection date picker mode
+    RSDFDatePickerModeWeek
+};
+
 @protocol RSDFDatePickerViewDelegate;
 @protocol RSDFDatePickerViewDataSource;
 
@@ -190,6 +197,13 @@ NS_ASSUME_NONNULL_BEGIN
  @discussion Can be overridden in subclasses for customization.
  */
 - (CGFloat)daysOfWeekViewHeight;
+
+/**
+ The mode of date picker which is set on date picker initialization. Default value is `RSDFDatePickerModeSingleDay`
+ 
+ @discussion Can be overridden in subclasses for customization.
+ */
+- (RSDFDatePickerMode)datePickerMode;
 
 @end
 
