@@ -273,19 +273,19 @@ CGFloat roundOnBase(CGFloat x, CGFloat base) {
                     case RSDFDatePickerDayCellSelectionStart: {
                         UIColor *rangeSelectionColor = [self selectedRangeImageColor];
                         NSString *selectedStartImageKey = [NSString stringWithFormat:@"img_selected_range_start_%@", [rangeSelectionColor description]];
-                        self.selectedDayImageView.image = [self rectImageWithKey:selectedStartImageKey withRoundedCorners:0b1001 frame:self.weekViewSelectionImageRect color:rangeSelectionColor];
+                        self.selectedDayImageView.image = [self rectImageWithKey:selectedStartImageKey elliseRect:self.selectedDayImageView.frame selection:self.selectionMode frame:self.weekViewSelectionImageRect color:rangeSelectionColor];
                         break;
                     }
                     case RSDFDatePickerDayCellSelectionMiddle: {
                         UIColor *rangeSelectionColor = [self selectedRangeImageColor];
                         NSString *selectedStartImageKey = [NSString stringWithFormat:@"img_selected_range_end_%@", [rangeSelectionColor description]];
-                        self.selectedDayImageView.image = [self rectImageWithKey:selectedStartImageKey withRoundedCorners:0b0000 frame:self.weekViewSelectionImageRect color:rangeSelectionColor];
+                        self.selectedDayImageView.image = [self rectImageWithKey:selectedStartImageKey elliseRect:self.selectedDayImageView.frame selection:self.selectionMode frame:self.weekViewSelectionImageRect color:rangeSelectionColor];
                         break;
                     }
                     case RSDFDatePickerDayCellSelectionEnd: {
                         UIColor *rangeSelectionColor = [self selectedRangeImageColor];
                         NSString *selectedStartImageKey = [NSString stringWithFormat:@"img_selected_range_middle_%@", [rangeSelectionColor description]];
-                        self.selectedDayImageView.image = [self rectImageWithKey:selectedStartImageKey withRoundedCorners:0b0110 frame:self.weekViewSelectionImageRect color:rangeSelectionColor];
+                        self.selectedDayImageView.image = [self rectImageWithKey:selectedStartImageKey elliseRect:self.selectedDayImageView.frame selection:self.selectionMode frame:self.weekViewSelectionImageRect color:rangeSelectionColor];
                         break;
                     }
                 }
@@ -341,44 +341,36 @@ CGFloat roundOnBase(CGFloat x, CGFloat base) {
     return ellipseImage;
 }
 
-- (void)addArcToPathIfNeeded:(CGMutablePathRef)pathRef corners:(NSUInteger)corners mask:(NSUInteger)mask p1:(CGPoint)p1 p2:(CGPoint)p2 radius:(CGFloat)radius
-{
-    if (corners & mask) {
-        CGPathAddArcToPoint(pathRef, nil, p1.x, p1.y, p2.x, p2.y, radius);
-    } else {
-        CGPathAddLineToPoint(pathRef, NULL, p1.x, p1.y);
-        CGPathAddLineToPoint(pathRef, NULL, p2.x, p2.y);
-    }
-}
-
-- (UIImage *)rectImageWithKey:(NSString *)key withRoundedCorners:(NSUInteger)corners frame:(CGRect)frame color:(UIColor *)color
+- (UIImage *)rectImageWithKey:(NSString *)key elliseRect:(CGRect)ellipseRect selection:(RSDFDatePickerDayCellSelection)selection frame:(CGRect)frame color:(UIColor *)color
 {
     UIImage *rectImage = [[self class] fetchObjectForKey:key withCreator:^id{
-        CGFloat radius = MIN(CGRectGetWidth(frame), CGRectGetHeight(frame)) / 2;
-        CGFloat fw = CGRectGetWidth(frame);
-        CGFloat fh = CGRectGetHeight(frame);
-        
         UIGraphicsBeginImageContextWithOptions(frame.size, NO, self.window.screen.scale);
         CGContextRef context = UIGraphicsGetCurrentContext();
         
         CGContextSetFillColorWithColor(context, color.CGColor);
         
-        CGMutablePathRef pathRef = CGPathCreateMutable();
-        
-        CGPathMoveToPoint(pathRef, NULL, 0, radius); // 11
-        [self addArcToPathIfNeeded:pathRef corners:corners mask:0b0001 p1:CGPointMake(0, 0) p2:CGPointMake(radius, 0) radius:radius]; // 0 -> 1
-        CGPathAddLineToPoint(pathRef, NULL, fw - radius, 0); // 2
-        [self addArcToPathIfNeeded:pathRef corners:corners mask:0b0010 p1:CGPointMake(fw, 0) p2:CGPointMake(fw, radius) radius:radius]; // 3 -> 4
-        CGPathAddLineToPoint(pathRef, NULL, fw, fh - radius); // 5
-        [self addArcToPathIfNeeded:pathRef corners:corners mask:0b0100 p1:CGPointMake(fw, fh) p2:CGPointMake(fw - radius, fh) radius:radius]; // 6 -> 7
-        CGPathAddLineToPoint(pathRef, NULL, radius, fh); // 8
-        [self addArcToPathIfNeeded:pathRef corners:corners mask:0b1000 p1:CGPointMake(0, fh) p2:CGPointMake(0, fh - radius) radius:radius]; // 9 -> 10
-        CGPathCloseSubpath(pathRef);
-        
-        CGContextAddPath(context, pathRef);
-        CGContextFillPath(context);
-        
-        CGPathRelease(pathRef);
+        switch (selection) {
+            case RSDFDatePickerDayCellSelectionStart: {
+                CGContextFillEllipseInRect(context, ellipseRect);
+                CGFloat width = MAX(0, CGRectGetWidth(frame) - CGRectGetMidX(ellipseRect));
+                CGRect fillingRect = CGRectMake(CGRectGetMidX(ellipseRect), ellipseRect.origin.y, width, CGRectGetHeight(ellipseRect));
+                CGContextFillRect(context, fillingRect);
+                break;
+            }
+            case RSDFDatePickerDayCellSelectionEnd: {
+                CGContextFillEllipseInRect(context, ellipseRect);
+                CGFloat width = MAX(0, CGRectGetMidX(ellipseRect));
+                CGRect fillingRect = CGRectMake(0, ellipseRect.origin.y, width, CGRectGetHeight(ellipseRect));
+                CGContextFillRect(context, fillingRect);
+                break;
+            }
+            case RSDFDatePickerDayCellSelectionSingle: // should not get here
+            case RSDFDatePickerDayCellSelectionMiddle: {
+                CGRect fillingRect = CGRectMake(0, ellipseRect.origin.y, CGRectGetWidth(frame), CGRectGetHeight(ellipseRect));
+                CGContextFillRect(context, fillingRect);
+                break;
+            }
+        }
         
         UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
         UIGraphicsEndImageContext();
