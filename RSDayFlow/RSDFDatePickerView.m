@@ -56,6 +56,7 @@ static NSString * const RSDFDatePickerViewDayCellIdentifier = @"RSDFDatePickerVi
 @property (nonatomic, readonly, strong) NSDate *endDate;
 
 @property (nonatomic, assign) RSDFDatePickerMode pickerMode;
+@property (nonatomic, assign) NSUInteger selectedDays;
 
 @end
 
@@ -341,21 +342,61 @@ static NSString * const RSDFDatePickerViewDayCellIdentifier = @"RSDFDatePickerVi
     [self scrollToDate:self.today animated:animated];
 }
 
+- (NSDate *)dateFromDate:(NSDate *)date daysAfter:(NSUInteger)offset
+{
+    NSDateComponents *components = [[NSDateComponents alloc] init];
+    components.day = offset;
+    return [self.calendar dateByAddingComponents:components toDate:date options:0];
+}
+
 - (void)selectDate:(NSDate *)date
 {
-    if (![self.selectedDate isEqual:date]) {
-        _selectedDate = date;
-        
-        // Manually deselecting multiple cells if week picker mode
-        if (self.pickerMode == RSDFDatePickerModeWeek) {
-            for (NSIndexPath *previouslySelectedCell in self.collectionView.indexPathsForSelectedItems) {
-                [self.collectionView deselectItemAtIndexPath:previouslySelectedCell animated:NO];
-                [self collectionView:self.collectionView didDeselectItemAtIndexPath:previouslySelectedCell];
-            }
-        }
-        
-        [self restoreSelection];
+    // Modify selected date depending on picker mode
+    NSDate *adjustedDate;
+    NSUInteger selectDays;
+    switch ([self pickerMode]) {
+        case RSDFDatePickerModeSingleDay:
+            adjustedDate = date;
+            selectDays = 1;
+            break;
+        case RSDFDatePickerModeWeek:
+            adjustedDate = [self dateWithFirstDayOfWeek:date];
+            selectDays = 7;
+            break;
     }
+    
+    // Filter valid dates
+    
+    NSMutableArray *validDates = [NSMutableArray array];
+    for (NSUInteger offset = 0; offset < selectDays; offset++) {
+        NSDate *date = [self dateFromDate:adjustedDate daysAfter:offset];
+        NSIndexPath *indexPathForSelectedDate = [self indexPathForDate:date];
+        if ([self collectionView:self.collectionView shouldSelectItemAtIndexPath:indexPathForSelectedDate]) {
+            [validDates addObject:date];
+        }
+    }
+    
+    if (validDates.count < 1) {
+        return;
+    }
+    
+    NSDate *fromDate = validDates.firstObject;
+    if ([self.selectedDate isEqual:date]) {
+        return;
+    }
+    
+    _selectedDate = fromDate;
+    _selectedDays = validDates.count;
+    
+    // Manually deselecting multiple cells if week picker mode
+    if (self.pickerMode == RSDFDatePickerModeWeek) {
+        for (NSIndexPath *previouslySelectedCell in self.collectionView.indexPathsForSelectedItems) {
+            [self.collectionView deselectItemAtIndexPath:previouslySelectedCell animated:NO];
+            [self collectionView:self.collectionView didDeselectItemAtIndexPath:previouslySelectedCell];
+        }
+    }
+    
+    [self restoreSelection];
 }
 
 #pragma mark - Helper Methods
@@ -540,20 +581,10 @@ static NSString * const RSDFDatePickerViewDayCellIdentifier = @"RSDFDatePickerVi
 
 - (void)restoreSelection
 {
-    if (self.selectedDate) {
-        switch (self.pickerMode) {
-            case RSDFDatePickerModeSingleDay:
-                [self restoresSelectionForDate:self.selectedDate];
-                break;
-            case RSDFDatePickerModeWeek: {
-                NSDate *from = [self dateWithFirstDayOfWeek:self.selectedDate];
-                for (NSUInteger offset = 0; offset < 7; offset++) {
-                    NSDate *date = [from dateByAddingTimeInterval:offset * 24 * 60 * 60];
-                    [self restoresSelectionForDate:date];
-                }
-                break;
-            }
-        }
+    NSDate *from = self.selectedDate;
+    for (NSUInteger offset = 0; offset < self.selectedDays; offset++) {
+        NSDate *date = [self dateFromDate:from daysAfter:offset];
+        [self restoresSelectionForDate:date];
     }
 }
 
@@ -563,8 +594,9 @@ static NSString * const RSDFDatePickerViewDayCellIdentifier = @"RSDFDatePickerVi
         [date compare:self.toDate] == NSOrderedAscending) {
         NSIndexPath *indexPathForSelectedDate = [self indexPathForDate:date];
         [self.collectionView selectItemAtIndexPath:indexPathForSelectedDate animated:NO scrollPosition:UICollectionViewScrollPositionNone];
-        UICollectionViewCell *selectedCell = [self.collectionView cellForItemAtIndexPath:indexPathForSelectedDate];
+        RSDFDatePickerDayCell *selectedCell = [self.collectionView cellForItemAtIndexPath:indexPathForSelectedDate];
         if (selectedCell) {
+            [self setCellSelectionType:selectedCell];
             [selectedCell setNeedsDisplay];
         }
     }
@@ -669,6 +701,23 @@ static NSString * const RSDFDatePickerViewDayCellIdentifier = @"RSDFDatePickerVi
     }];
 }
 
+- (void)setCellSelectionType:(RSDFDatePickerDayCell *)cell
+{
+    if (self.selectedDays > 1) {
+        RSDFDatePickerDate first = [self pickerDateFromDate:self.selectedDate];
+        RSDFDatePickerDate last = [self pickerDateFromDate:[self dateFromDate:self.selectedDate daysAfter:(self.selectedDays - 1)]];
+        if (first.day == cell.date.day && first.month == cell.date.month && first.year == cell.date.year) {
+            cell.selectionMode = RSDFDatePickerDayCellSelectionStart;
+        } else if (last.day == cell.date.day && last.month == cell.date.month && last.year == cell.date.year) {
+            cell.selectionMode = RSDFDatePickerDayCellSelectionEnd;
+        } else {
+            cell.selectionMode = RSDFDatePickerDayCellSelectionMiddle;
+        }
+    } else {
+        cell.selectionMode = RSDFDatePickerDayCellSelectionSingle;
+    }
+}
+
 #pragma mark - <UICollectionViewDataSource>
 
 - (RSDFDatePickerDayCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath
@@ -739,6 +788,7 @@ static NSString * const RSDFDatePickerViewDayCellIdentifier = @"RSDFDatePickerVi
         cell.accessibilityLabel = [NSDateFormatter localizedStringFromDate:cellDate dateStyle:NSDateFormatterLongStyle timeStyle:NSDateFormatterNoStyle];
     }
     
+    [self setCellSelectionType:cell];
     [cell setNeedsDisplay];
     
     return cell;

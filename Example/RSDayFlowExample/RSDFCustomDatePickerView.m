@@ -57,4 +57,9 @@
     return [RSDFCustomDatePickerDayCell class];
 }
 
+- (RSDFDatePickerMode)datePickerMode
+{
+    return RSDFDatePickerModeWeek;
+}
+
 @end

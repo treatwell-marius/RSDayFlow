@@ -28,6 +28,13 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+typedef NS_ENUM (NSUInteger, RSDFDatePickerDayCellSelection) {
+    RSDFDatePickerDayCellSelectionSingle,
+    RSDFDatePickerDayCellSelectionStart,
+    RSDFDatePickerDayCellSelectionMiddle,
+    RSDFDatePickerDayCellSelectionEnd
+};
+
 /**
  The `RSDFDatePickerDayCell` is a cell which used to display a day in the date picker view.
  */
@@ -82,6 +89,11 @@ NS_ASSUME_NONNULL_BEGIN
  A Boolean value that determines whether the cell is out of range or not (startDate, endDate)
  */
 @property (nonatomic, getter = isOutOfRange) BOOL outOfRange;
+
+/**
+ A type of bubble selector
+ */
+@property (nonatomic, readwrite, assign) RSDFDatePickerDayCellSelection selectionMode;
 
 /**
  The color of the default mark image for the cell of the day. Default value is [UIColor colorWithRed:184/255.0f green:184/255.0f blue:184/255.0f alpha:1.0f].

@@ -251,11 +251,38 @@ CGFloat roundOnBase(CGFloat x, CGFloat base) {
                 if (!self.isToday) {
                     self.dateLabel.font = [self selectedDayLabelFont];
                     self.dateLabel.textColor = [self selectedDayLabelTextColor];
-                    self.selectedDayImageView.image = [self selectedDayImage];
                 } else {
                     self.dateLabel.font = [self selectedTodayLabelFont];
                     self.dateLabel.textColor = [self selectedTodayLabelTextColor];
-                    self.selectedDayImageView.image = [self selectedTodayImage];
+                }
+                
+                switch (self.selectionMode) {
+                    case RSDFDatePickerDayCellSelectionSingle: {
+                        if (!self.isToday) {
+                            self.selectedDayImageView.image = [self selectedDayImage];
+                        } else {
+                            self.selectedDayImageView.image = [self selectedTodayImage];
+                        }
+                        break;
+                    }
+                    case RSDFDatePickerDayCellSelectionStart: {
+                        UIColor *rangeSelectionColor = [UIColor redColor];
+                        NSString *selectedStartImageKey = [NSString stringWithFormat:@"img_selected_range_start_%@", [rangeSelectionColor description]];
+                        self.selectedDayImageView.image = [self ellipseImageWithKey:selectedStartImageKey frame:self.selectedDayImageView.frame color:rangeSelectionColor];
+                        break;
+                    }
+                    case RSDFDatePickerDayCellSelectionEnd: {
+                        UIColor *rangeSelectionColor = [UIColor greenColor];
+                        NSString *selectedStartImageKey = [NSString stringWithFormat:@"img_selected_range_middle_%@", [rangeSelectionColor description]];
+                        self.selectedDayImageView.image = [self ellipseImageWithKey:selectedStartImageKey frame:self.selectedDayImageView.frame color:rangeSelectionColor];
+                        break;
+                    }
+                    case RSDFDatePickerDayCellSelectionMiddle: {
+                        UIColor *rangeSelectionColor = [UIColor blueColor];
+                        NSString *selectedStartImageKey = [NSString stringWithFormat:@"img_selected_range_end_%@", [rangeSelectionColor description]];
+                        self.selectedDayImageView.image = [self ellipseImageWithKey:selectedStartImageKey frame:self.selectedDayImageView.frame color:rangeSelectionColor];
+                        break;
+                    }
                 }
             }
             
