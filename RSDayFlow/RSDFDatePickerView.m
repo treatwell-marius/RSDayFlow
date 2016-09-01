@@ -371,6 +371,12 @@ static NSString * const RSDFDatePickerViewDayCellIdentifier = @"RSDFDatePickerVi
     for (NSUInteger offset = 0; offset < selectDays; offset++) {
         NSDate *date = [self dateFromDate:adjustedDate daysAfter:offset];
         NSIndexPath *indexPathForSelectedDate = [self indexPathForDate:date];
+        
+        // Checking if index path is valid
+        if (indexPathForSelectedDate.section >= [self.collectionView numberOfSections] || indexPathForSelectedDate.item >= [self.collectionView numberOfItemsInSection:indexPathForSelectedDate.section]) {
+            continue;
+        }
+        
         if ([self collectionView:self.collectionView shouldSelectItemAtIndexPath:indexPathForSelectedDate]) {
             [validDates addObject:date];
         }
@@ -496,9 +502,10 @@ static NSString * const RSDFDatePickerViewDayCellIdentifier = @"RSDFDatePickerVi
 
 - (NSDate *)dateWithFirstDayOfWeek:(NSDate *)date
 {
-    NSDateComponents *dateComponents = [self.calendar components:NSCalendarUnitYear | NSCalendarUnitMonth | NSCalendarUnitWeekOfYear | NSCalendarUnitWeekday fromDate:date];
-    dateComponents.weekday = self.calendar.firstWeekday;
-    return [self.calendar dateFromComponents:dateComponents];
+    NSDateComponents *dateComponents = [self.calendar components:NSCalendarUnitWeekday fromDate:date];
+    NSDateComponents *newComponents = [[NSDateComponents alloc] init];
+    newComponents.weekday = -dateComponents.weekday + self.calendar.firstWeekday;
+    return [self.calendar dateByAddingComponents:newComponents toDate:date options:0];
 }
 
 - (NSDate *)dateWithoutTimeComponents:(NSDate *)date
