@@ -174,10 +174,13 @@
 - (RSDFCustomDatePickerView *)customDatePickerView
 {
     if (!_customDatePickerView) {
-        _customDatePickerView = [[RSDFCustomDatePickerView alloc] initWithFrame:self.view.bounds calendar:self.calendar];
+        CGFloat pointForEachDay = (1/[UIScreen mainScreen].scale) * 7;
+        CGRect pickerFrame = self.view.bounds;
+        pickerFrame.size.width = floor(CGRectGetWidth(self.view.bounds) / pointForEachDay) * pointForEachDay;
+        _customDatePickerView = [[RSDFCustomDatePickerView alloc] initWithFrame:pickerFrame calendar:self.calendar];
         _customDatePickerView.delegate = self;
         _customDatePickerView.dataSource = self;
-		_customDatePickerView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+		_customDatePickerView.autoresizingMask = UIViewAutoresizingFlexibleHeight;
         _customDatePickerView.pagingEnabled = YES;
     }
     return _customDatePickerView;

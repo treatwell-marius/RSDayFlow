@@ -209,6 +209,11 @@ CGFloat roundOnBase(CGFloat x, CGFloat base) {
     }
 }
 
+- (CGRect)weekViewSelectionImageRect
+{
+    return CGRectMake(0, CGRectGetMinY(self.selectedDayImageView.frame), CGRectGetWidth(self.frame), CGRectGetHeight(self.selectedDayImageView.frame));
+}
+
 #pragma mark - Private
 
 - (void)updateSubviews
@@ -266,21 +271,21 @@ CGFloat roundOnBase(CGFloat x, CGFloat base) {
                         break;
                     }
                     case RSDFDatePickerDayCellSelectionStart: {
-                        UIColor *rangeSelectionColor = [UIColor redColor];
+                        UIColor *rangeSelectionColor = [self selectedRangeImageColor];
                         NSString *selectedStartImageKey = [NSString stringWithFormat:@"img_selected_range_start_%@", [rangeSelectionColor description]];
-                        self.selectedDayImageView.image = [self ellipseImageWithKey:selectedStartImageKey frame:self.selectedDayImageView.frame color:rangeSelectionColor];
-                        break;
-                    }
-                    case RSDFDatePickerDayCellSelectionEnd: {
-                        UIColor *rangeSelectionColor = [UIColor greenColor];
-                        NSString *selectedStartImageKey = [NSString stringWithFormat:@"img_selected_range_middle_%@", [rangeSelectionColor description]];
-                        self.selectedDayImageView.image = [self ellipseImageWithKey:selectedStartImageKey frame:self.selectedDayImageView.frame color:rangeSelectionColor];
+                        self.selectedDayImageView.image = [self rectImageWithKey:selectedStartImageKey withRoundedCorners:0b1001 frame:self.weekViewSelectionImageRect color:rangeSelectionColor];
                         break;
                     }
                     case RSDFDatePickerDayCellSelectionMiddle: {
-                        UIColor *rangeSelectionColor = [UIColor blueColor];
+                        UIColor *rangeSelectionColor = [self selectedRangeImageColor];
                         NSString *selectedStartImageKey = [NSString stringWithFormat:@"img_selected_range_end_%@", [rangeSelectionColor description]];
-                        self.selectedDayImageView.image = [self ellipseImageWithKey:selectedStartImageKey frame:self.selectedDayImageView.frame color:rangeSelectionColor];
+                        self.selectedDayImageView.image = [self rectImageWithKey:selectedStartImageKey withRoundedCorners:0b0000 frame:self.weekViewSelectionImageRect color:rangeSelectionColor];
+                        break;
+                    }
+                    case RSDFDatePickerDayCellSelectionEnd: {
+                        UIColor *rangeSelectionColor = [self selectedRangeImageColor];
+                        NSString *selectedStartImageKey = [NSString stringWithFormat:@"img_selected_range_middle_%@", [rangeSelectionColor description]];
+                        self.selectedDayImageView.image = [self rectImageWithKey:selectedStartImageKey withRoundedCorners:0b0110 frame:self.weekViewSelectionImageRect color:rangeSelectionColor];
                         break;
                     }
                 }
@@ -334,6 +339,53 @@ CGFloat roundOnBase(CGFloat x, CGFloat base) {
         return image;
     }];
     return ellipseImage;
+}
+
+- (void)addArcToPathIfNeeded:(CGMutablePathRef)pathRef corners:(NSUInteger)corners mask:(NSUInteger)mask p1:(CGPoint)p1 p2:(CGPoint)p2 radius:(CGFloat)radius
+{
+    if (corners & mask) {
+        CGPathAddArcToPoint(pathRef, nil, p1.x, p1.y, p2.x, p2.y, radius);
+    } else {
+        CGPathAddLineToPoint(pathRef, NULL, p1.x, p1.y);
+        CGPathAddLineToPoint(pathRef, NULL, p2.x, p2.y);
+    }
+}
+
+- (UIImage *)rectImageWithKey:(NSString *)key withRoundedCorners:(NSUInteger)corners frame:(CGRect)frame color:(UIColor *)color
+{
+    UIImage *rectImage = [[self class] fetchObjectForKey:key withCreator:^id{
+        CGFloat radius = MIN(CGRectGetWidth(frame), CGRectGetHeight(frame)) / 2;
+        CGFloat fw = CGRectGetWidth(frame);
+        CGFloat fh = CGRectGetHeight(frame);
+        
+        UIGraphicsBeginImageContextWithOptions(frame.size, NO, self.window.screen.scale);
+        CGContextRef context = UIGraphicsGetCurrentContext();
+        
+        CGContextSetFillColorWithColor(context, color.CGColor);
+        
+        CGMutablePathRef pathRef = CGPathCreateMutable();
+        
+        CGPathMoveToPoint(pathRef, NULL, 0, radius); // 11
+        [self addArcToPathIfNeeded:pathRef corners:corners mask:0b0001 p1:CGPointMake(0, 0) p2:CGPointMake(radius, 0) radius:radius]; // 0 -> 1
+        CGPathAddLineToPoint(pathRef, NULL, fw - radius, 0); // 2
+        [self addArcToPathIfNeeded:pathRef corners:corners mask:0b0010 p1:CGPointMake(fw, 0) p2:CGPointMake(fw, radius) radius:radius]; // 3 -> 4
+        CGPathAddLineToPoint(pathRef, NULL, fw, fh - radius); // 5
+        [self addArcToPathIfNeeded:pathRef corners:corners mask:0b0100 p1:CGPointMake(fw, fh) p2:CGPointMake(fw - radius, fh) radius:radius]; // 6 -> 7
+        CGPathAddLineToPoint(pathRef, NULL, radius, fh); // 8
+        [self addArcToPathIfNeeded:pathRef corners:corners mask:0b1000 p1:CGPointMake(0, fh) p2:CGPointMake(0, fh - radius) radius:radius]; // 9 -> 10
+        CGPathCloseSubpath(pathRef);
+        
+        CGContextAddPath(context, pathRef);
+        CGContextFillPath(context);
+        
+        CGPathRelease(pathRef);
+        
+        UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
+        UIGraphicsEndImageContext();
+        
+        return image;
+    }];
+    return rectImage;
 }
 
 - (UIImage *)rectImageWithKey:(NSString *)key frame:(CGRect)frame color:(UIColor *)color
@@ -454,6 +506,11 @@ CGFloat roundOnBase(CGFloat x, CGFloat base) {
 }
 
 - (UIColor *)selectedDayImageColor
+{
+    return [UIColor colorWithRed:255/255.0f green:59/255.0f blue:48/255.0f alpha:1.0f];
+}
+
+- (UIColor *)selectedRangeImageColor
 {
     return [UIColor colorWithRed:255/255.0f green:59/255.0f blue:48/255.0f alpha:1.0f];
 }

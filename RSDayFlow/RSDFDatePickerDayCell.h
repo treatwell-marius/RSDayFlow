@@ -242,6 +242,13 @@ typedef NS_ENUM (NSUInteger, RSDFDatePickerDayCellSelection) {
 - (UIColor *)selectedDayImageColor;
 
 /**
+ The color of the background image for the cell of the range when it is selected. Default value is [UIColor colorWithRed:255/255.0f green:59/255.0f blue:48/255.0f alpha:1.0f].
+ 
+ @discussion Can be overridden in subclasses for customization.
+ */
+- (UIColor *)selectedRangeImageColor;
+
+/**
  The custom background image for the cell of the day when it is selected. Default value is `nil`.
  
  @discussion Can be overridden in subclasses for customization.

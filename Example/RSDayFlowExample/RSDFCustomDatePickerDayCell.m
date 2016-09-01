@@ -104,7 +104,14 @@
 
 - (CGRect)selectedImageViewFrame
 {
-    return CGRectMake(0, 0, CGRectGetWidth(self.frame), 30);
+    CGFloat width = CGRectGetWidth(self.frame) / 3;
+    CGFloat x = (CGRectGetWidth(self.frame) - width) / 2;
+    return CGRectMake(x, 0, width, 30);
+}
+
+- (UIColor *)selectedRangeImageColor
+{
+    return [UIColor purpleColor];
 }
 
 @end

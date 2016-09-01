@@ -39,4 +39,14 @@
     return (CGSize){ [super selfItemSize].width, 60 };
 }
 
+- (CGFloat)selfMinimumLineSpacing
+{
+    return 0;
+}
+
+- (CGFloat)selfMinimumInteritemSpacing
+{
+    return 0;
+}
+
 @end
