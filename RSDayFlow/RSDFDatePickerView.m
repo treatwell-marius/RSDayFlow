@@ -372,16 +372,17 @@ static NSString * const RSDFDatePickerViewDayCellIdentifier = @"RSDFDatePickerVi
         NSDate *date = [self dateFromDate:adjustedDate daysAfter:offset];
         NSIndexPath *indexPathForSelectedDate = [self indexPathForDate:date];
         
+        // Checking if index path is valid
+        if (indexPathForSelectedDate.section >= [self.collectionView numberOfSections] || indexPathForSelectedDate.item >= [self.collectionView numberOfItemsInSection:indexPathForSelectedDate.section]) {
+            continue;
+        }
+        
         if ([self collectionView:self.collectionView shouldSelectItemAtIndexPath:indexPathForSelectedDate]) {
             [validDates addObject:date];
         }
     }
     
-    if (validDates.count < 1) {
-        return;
-    }
-    
-    NSDate *fromDate = validDates.firstObject;
+    NSDate *fromDate = [self dateFromDate:adjustedDate daysAfter:0];
     if ([self.selectedDate isEqual:date]) {
         return;
     }
