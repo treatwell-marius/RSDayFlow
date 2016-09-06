@@ -89,8 +89,8 @@ CGFloat roundOnBase(CGFloat x, CGFloat base) {
     [super layoutSubviews];
     
     self.dateLabel.frame = [self selectedImageViewFrame];
-    self.selectedDayImageView.frame = [self selectedImageViewFrame];
-    self.overlayImageView.frame = [self selectedImageViewFrame];
+    self.selectedDayImageView.frame = self.bounds;
+    self.overlayImageView.frame = self.bounds;
     self.markImageView.frame = [self markImageViewFrame];
     self.dividerImageView.frame = [self dividerImageViewFrame];
     self.dividerImageView.image = [self dividerImage];
@@ -137,7 +137,7 @@ CGFloat roundOnBase(CGFloat x, CGFloat base) {
 {
     if (!_markImage) {
         NSString *markImageKey = [NSString stringWithFormat:@"img_mark_%@", [self.markImageColor description]];
-        _markImage = [self ellipseImageWithKey:markImageKey frame:self.markImageView.frame color:self.markImageColor];
+        _markImage = [self rectImageWithKey:markImageKey elliseRect:self.markImageView.bounds selection:RSDFDatePickerDayCellSelectionSingle frame:self.markImageView.frame color:self.markImageColor];
     }
     return _markImage;
 }
@@ -177,7 +177,7 @@ CGFloat roundOnBase(CGFloat x, CGFloat base) {
 - (UIImageView *)selectedDayImageView
 {
     if (!_selectedDayImageView) {
-        _selectedDayImageView = [[UIImageView alloc] initWithFrame:[self selectedImageViewFrame]];
+        _selectedDayImageView = [[UIImageView alloc] initWithFrame:self.bounds];
         _selectedDayImageView.backgroundColor = [UIColor clearColor];
         _selectedDayImageView.contentMode = UIViewContentModeCenter;
         _selectedDayImageView.image = [self selectedDayImage];
@@ -211,7 +211,7 @@ CGFloat roundOnBase(CGFloat x, CGFloat base) {
 
 - (CGRect)weekViewSelectionImageRect
 {
-    return CGRectMake(0, CGRectGetMinY(self.selectedDayImageView.frame), CGRectGetWidth(self.frame), CGRectGetHeight(self.selectedDayImageView.frame));
+    return CGRectMake(0, 0, CGRectGetWidth(self.frame), CGRectGetHeight(self.selectedImageViewFrame));
 }
 
 #pragma mark - Private
@@ -273,19 +273,19 @@ CGFloat roundOnBase(CGFloat x, CGFloat base) {
                     case RSDFDatePickerDayCellSelectionStart: {
                         UIColor *rangeSelectionColor = [self selectedRangeImageColor];
                         NSString *selectedStartImageKey = [NSString stringWithFormat:@"img_selected_range_start_%@", [rangeSelectionColor description]];
-                        self.selectedDayImageView.image = [self rectImageWithKey:selectedStartImageKey elliseRect:self.selectedDayImageView.frame selection:self.selectionMode frame:self.weekViewSelectionImageRect color:rangeSelectionColor];
+                        self.selectedDayImageView.image = [self rectImageWithKey:selectedStartImageKey elliseRect:self.selectedImageViewFrame selection:self.selectionMode frame:self.bounds color:rangeSelectionColor];
                         break;
                     }
                     case RSDFDatePickerDayCellSelectionMiddle: {
                         UIColor *rangeSelectionColor = [self selectedRangeImageColor];
                         NSString *selectedStartImageKey = [NSString stringWithFormat:@"img_selected_range_end_%@", [rangeSelectionColor description]];
-                        self.selectedDayImageView.image = [self rectImageWithKey:selectedStartImageKey elliseRect:self.selectedDayImageView.frame selection:self.selectionMode frame:self.weekViewSelectionImageRect color:rangeSelectionColor];
+                        self.selectedDayImageView.image = [self rectImageWithKey:selectedStartImageKey elliseRect:self.selectedImageViewFrame selection:self.selectionMode frame:self.bounds color:rangeSelectionColor];
                         break;
                     }
                     case RSDFDatePickerDayCellSelectionEnd: {
                         UIColor *rangeSelectionColor = [self selectedRangeImageColor];
                         NSString *selectedStartImageKey = [NSString stringWithFormat:@"img_selected_range_middle_%@", [rangeSelectionColor description]];
-                        self.selectedDayImageView.image = [self rectImageWithKey:selectedStartImageKey elliseRect:self.selectedDayImageView.frame selection:self.selectionMode frame:self.weekViewSelectionImageRect color:rangeSelectionColor];
+                        self.selectedDayImageView.image = [self rectImageWithKey:selectedStartImageKey elliseRect:self.selectedImageViewFrame selection:self.selectionMode frame:self.bounds color:rangeSelectionColor];
                         break;
                     }
                 }
@@ -321,26 +321,6 @@ CGFloat roundOnBase(CGFloat x, CGFloat base) {
     return answer;
 }
 
-- (UIImage *)ellipseImageWithKey:(NSString *)key frame:(CGRect)frame color:(UIColor *)color
-{
-    UIImage *ellipseImage = [[self class] fetchObjectForKey:key withCreator:^id{
-        UIGraphicsBeginImageContextWithOptions(frame.size, NO, self.window.screen.scale);
-        CGContextRef context = UIGraphicsGetCurrentContext();
-        
-        CGRect rect = frame;
-        rect.origin = CGPointZero;
-        
-        CGContextSetFillColorWithColor(context, color.CGColor);
-        CGContextFillEllipseInRect(context, rect);
-        
-        UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
-        UIGraphicsEndImageContext();
-        
-        return image;
-    }];
-    return ellipseImage;
-}
-
 - (UIImage *)rectImageWithKey:(NSString *)key elliseRect:(CGRect)ellipseRect selection:(RSDFDatePickerDayCellSelection)selection frame:(CGRect)frame color:(UIColor *)color
 {
     UIImage *rectImage = [[self class] fetchObjectForKey:key withCreator:^id{
@@ -364,7 +344,10 @@ CGFloat roundOnBase(CGFloat x, CGFloat base) {
                 CGContextFillRect(context, fillingRect);
                 break;
             }
-            case RSDFDatePickerDayCellSelectionSingle: // should not get here
+            case RSDFDatePickerDayCellSelectionSingle: {
+                CGContextFillEllipseInRect(context, ellipseRect);
+                break;
+            }
             case RSDFDatePickerDayCellSelectionMiddle: {
                 CGRect fillingRect = CGRectMake(0, ellipseRect.origin.y, CGRectGetWidth(frame), CGRectGetHeight(ellipseRect));
                 CGContextFillRect(context, fillingRect);
@@ -482,7 +465,7 @@ CGFloat roundOnBase(CGFloat x, CGFloat base) {
     if (!selectedTodayImage) {
         UIColor *selectedTodayImageColor = [self selectedTodayImageColor];
         NSString *selectedTodayImageKey = [NSString stringWithFormat:@"img_selected_today_%@", [selectedTodayImageColor description]];
-        selectedTodayImage = [self ellipseImageWithKey:selectedTodayImageKey frame:self.selectedDayImageView.frame color:selectedTodayImageColor];
+        selectedTodayImage = [self rectImageWithKey:selectedTodayImageKey elliseRect:self.selectedImageViewFrame selection:RSDFDatePickerDayCellSelectionSingle frame:self.selectedDayImageView.frame color:selectedTodayImageColor];
     }
     return selectedTodayImage;
 }
@@ -518,7 +501,7 @@ CGFloat roundOnBase(CGFloat x, CGFloat base) {
     if (!selectedDayImage) {
         UIColor *selectedDayImageColor = [self selectedDayImageColor];
         NSString *selectedDayImageKey = [NSString stringWithFormat:@"img_selected_day_%@", [selectedDayImageColor description]];
-        selectedDayImage = [self ellipseImageWithKey:selectedDayImageKey frame:self.selectedDayImageView.frame color:selectedDayImageColor];
+        selectedDayImage = [self rectImageWithKey:selectedDayImageKey elliseRect:self.selectedImageViewFrame selection:RSDFDatePickerDayCellSelectionSingle frame:self.selectedDayImageView.frame color:selectedDayImageColor];
     }
     return selectedDayImage;
 }
@@ -539,7 +522,7 @@ CGFloat roundOnBase(CGFloat x, CGFloat base) {
     if (!overlayImage) {
         UIColor *overlayImageColor = [self overlayImageColor];
         NSString *overlayImageKey = [NSString stringWithFormat:@"img_overlay_%@", [overlayImageColor description]];
-        overlayImage = [self ellipseImageWithKey:overlayImageKey frame:self.overlayImageView.frame color:overlayImageColor];
+        overlayImage = [self rectImageWithKey:overlayImageKey elliseRect:self.selectedImageViewFrame selection:RSDFDatePickerDayCellSelectionSingle frame:self.selectedDayImageView.frame color:overlayImageColor];
     }
     return overlayImage;
 }
