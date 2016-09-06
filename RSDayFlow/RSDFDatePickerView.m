@@ -372,11 +372,6 @@ static NSString * const RSDFDatePickerViewDayCellIdentifier = @"RSDFDatePickerVi
         NSDate *date = [self dateFromDate:adjustedDate daysAfter:offset];
         NSIndexPath *indexPathForSelectedDate = [self indexPathForDate:date];
         
-        // Checking if index path is valid
-        if (indexPathForSelectedDate.section >= [self.collectionView numberOfSections] || indexPathForSelectedDate.item >= [self.collectionView numberOfItemsInSection:indexPathForSelectedDate.section]) {
-            continue;
-        }
-        
         if ([self collectionView:self.collectionView shouldSelectItemAtIndexPath:indexPathForSelectedDate]) {
             [validDates addObject:date];
         }
@@ -394,12 +389,10 @@ static NSString * const RSDFDatePickerViewDayCellIdentifier = @"RSDFDatePickerVi
     _selectedDate = fromDate;
     _selectedDays = validDates.count;
     
-    // Manually deselecting multiple cells if week picker mode
-    if (self.pickerMode == RSDFDatePickerModeWeek) {
-        for (NSIndexPath *previouslySelectedCell in self.collectionView.indexPathsForSelectedItems) {
-            [self.collectionView deselectItemAtIndexPath:previouslySelectedCell animated:NO];
-            [self collectionView:self.collectionView didDeselectItemAtIndexPath:previouslySelectedCell];
-        }
+    // Manually deselecting multiple cells in case of date being selected programmatically
+    for (NSIndexPath *previouslySelectedCell in self.collectionView.indexPathsForSelectedItems) {
+        [self.collectionView deselectItemAtIndexPath:previouslySelectedCell animated:NO];
+        [self collectionView:self.collectionView didDeselectItemAtIndexPath:previouslySelectedCell];
     }
     
     [self restoreSelection];
