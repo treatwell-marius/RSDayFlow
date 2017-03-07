@@ -36,6 +36,24 @@
 static NSString * const RSDFDatePickerViewMonthHeaderIdentifier = @"RSDFDatePickerViewMonthHeaderIdentifier";
 static NSString * const RSDFDatePickerViewDayCellIdentifier = @"RSDFDatePickerViewDayCellIdentifier";
 
+@interface NSString (UppercaseFirstLetter)
+
+@property (nonatomic, readonly) NSString *uppercasedFirstLetter;
+
+@end
+
+@implementation NSString (UppercaseFirstLetter)
+
+- (NSString *)uppercasedFirstLetter
+{
+    if (self.length < 1) {
+        return self;
+    }
+    return [[self substringToIndex:1].uppercaseString stringByAppendingString:[self substringFromIndex:1]];
+}
+
+@end
+
 @interface RSDFDatePickerView () <RSDFDatePickerCollectionViewDelegate>
 
 @property (nonatomic, readonly, strong) NSCalendar *calendar;
@@ -825,7 +843,7 @@ static NSString * const RSDFDatePickerViewDayCellIdentifier = @"RSDFDatePickerVi
                 monthString = [([dateFormatter shortStandaloneMonthSymbols][date.month - 1]) uppercaseString];
                 break;
             case RSDFMonthsDisplayStyleFull:
-                monthString = [dateFormatter monthSymbols][date.month - 1];
+                monthString = ([dateFormatter standaloneMonthSymbols][date.month - 1]).uppercasedFirstLetter;
                 break;
         }
         
